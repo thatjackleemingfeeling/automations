@@ -1,0 +1,32 @@
+# A colleague needed to create new tabs and hyperlink them from a list of around 100 journals to make this form: https://docs.google.com/spreadsheets/d/1mfSeCinxoAn7Q_jjGPKG1-DG1W7on3CJ1jQRuh_V9LU/edit#gid=345678574
+ 
+# I found a way to automate the process  
+
+# The code in javascript is below
+
+
+``` java
+var ss;
+var firstSheet;
+
+function createTabsFromList() {
+  ss = SpreadsheetApp.getActiveSpreadsheet();
+  firstSheet = ss.getSheets()[0]; // Get the first sheet
+  var listRange = firstSheet.getRange("E5:E28"); // Range for the list
+  var listValues = listRange.getValues();
+  
+  createTabsAndHyperlinks(listValues);
+}
+
+function createTabsAndHyperlinks(listValues) {
+  listValues.forEach(function(item) {
+    var tabName = item[0].toString(); // Convert the item to a string
+    var newSheet = ss.insertSheet(tabName); // Create a new sheet with the item's name
+    var sheetId = newSheet.getSheetId(); // Get the ID of the newly created sheet
+    var cell = firstSheet.getRange(firstSheet.getLastRow() + 1, 1); // Get the next available cell in column A
+    cell.setValue(tabName).setFormula('=HYPERLINK("#gid=' + sheetId + '","' + tabName + '")');
+  });
+}
+
+
+```
