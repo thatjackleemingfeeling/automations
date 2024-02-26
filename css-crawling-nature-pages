@@ -1,0 +1,107 @@
+# My colleagues had an annoying copy-paste problem, outlined here: https://drive.google.com/file/d/1cTfQU--6BfP02Vzu3KshiXSlFOrbYDhv/view
+
+# This python notebook code runs to pull out the relevanty information without issues.
+
+```
+#@title Code here (just press play)
+
+#Hi! Click the play button here and check below for further instructions.
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import scipy as sp
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
+
+def scrape_custom_metadata(url):
+    # Send a GET request to the URL
+    response = requests.get(url)
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        # Parse the HTML content using BeautifulSoup
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Extract custom metadata
+        title = get_meta_content(soup, 'dc.title')
+        url = get_meta_content(soup, 'prism.url')
+        description = get_meta_content(soup, 'og:description')
+        authors = get_all_meta_content(soup, 'dc.creator')
+        journal = get_meta_content(soup, 'citation_journal_title')
+        input_date = get_meta_content(soup, 'dc.date')
+
+        # fix date data
+        parsed_date = datetime.strptime(input_date, '%Y-%m-%d')
+        date = parsed_date.strftime('%d %b %Y')
+
+        #fix author data
+        #first, reverse list entries
+        r_authors = [f"{entry.split(', ')[1]} {entry.split(', ')[0]}" for entry in authors]
+        authors = r_authors
+
+        #now, rework to match formatting depending on number in list
+        def format_authors(authors):
+          if len(authors) == 1:
+            return authors[0]
+          elif len(authors) == 2:
+            return f"{authors[0]} & {authors [1]}"
+          elif len(authors) == 3:
+            return f"{authors[0]}, {authors[1]} & {authors[2]}"
+          elif len(authors) >= 4:
+            return f"{authors[0]}, {authors[1]} ... {authors[-1]}"
+
+        # Print or return the extracted metadata
+        print('Article information:')
+        print('')
+        print(f'Title: {title}')
+        print(f'URL: {url}')
+        print(f'Description: {description}')
+        print(f'Authors: {"; ".join(authors)}')
+        print(f'Journal: {journal}')
+        print(f'Date: {date}')
+
+        # print in the requested format
+
+        print('')
+        print('')
+        print('To copy-paste:')
+        print(f'<small>{description}<br><br>{format_authors(authors)}<br><em>{journal}</em>, {date}</small>')
+
+    else:
+        print(f'Error: Unable to fetch the page. Status code: {response.status_code}')
+
+# Fixes if the html scraper doesn't work the first time
+
+def get_meta_content(soup, meta_name):
+    # Try to find the meta tag with 'name' attribute
+    meta_tag = soup.find('meta', attrs={'name': meta_name})
+
+    # If not found, try finding the meta tag with 'property' attribute
+    if not meta_tag:
+        meta_tag = soup.find('meta', attrs={'property': meta_name})
+
+    return meta_tag['content'] if meta_tag else f'No {meta_name} found'
+
+def get_all_meta_content(soup, meta_name):
+    # Try to find all meta tags with 'name' attribute
+    meta_tags = soup.find_all('meta', attrs={'name': meta_name})
+
+    # If not found, try finding all meta tags with 'property' attribute
+    if not meta_tags:
+        meta_tags = soup.find_all('meta', attrs={'property': meta_name})
+
+    return [meta_tag['content'] for meta_tag in meta_tags] if meta_tags else [f'No {meta_name} found']
+
+
+# Use
+
+print ("Hi! I'm a custom web scraper to get some information out of Springer Nature article pages.")
+print('Any questions: jack.leeming@nature.com')
+print('')
+url = input("Enter your URL: " ).strip()
+print('')
+scrape_custom_metadata(url)
+
+```
